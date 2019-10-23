@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
+	"time"
 )
 
 // ConferenceType is the type of conference you want to get the data for.
@@ -16,18 +18,20 @@ const (
 	Android ConferenceType = iota
 	// Clojure conference
 	Clojure
-	// CC++ conference
+	// C++ conference
 	CPP
 	// CSS conference
 	CSS
-	// Datascience conference
+	// Data Science conference
 	Data
 	// DevOps conference
 	DevOps
-	// .Net conference
+	// DotNet conference
 	DotNet
 	// Elixer conference
 	Elixer
+	// Elm conference
+	Elm
 	// General conference
 	General
 	// Golang conference
@@ -42,10 +46,14 @@ const (
 	Java
 	// JavaScript / Node.js conference
 	JavaScript
+	// Leadership conference
+	Leadership
 	// Networking conference
 	Networking
 	// PHP conference
 	PHP
+	// Product Management conference
+	Product
 	// Python conference
 	Python
 	// Ruby conference
@@ -64,6 +72,24 @@ const (
 	baseURL = "https://raw.githubusercontent.com/tech-conferences/conference-data/master/conferences/%d/%s.json"
 )
 
+const dateLayout = "2006-01-02"
+
+// Time is a custom struct to unmarshal the dates into a proper format
+type Time struct {
+	time.Time
+}
+
+// UnmarshalJSON unmarshals the Time struct
+func (ct *Time) UnmarshalJSON(b []byte) (err error) {
+	s := strings.Trim(string(b), "\"")
+	if s == "null" {
+		ct.Time = time.Time{}
+		return
+	}
+	ct.Time, err = time.Parse(dateLayout, s)
+	return
+}
+
 // types are the actual names of the files
 var types = [...]string{
 	"android",
@@ -74,6 +100,7 @@ var types = [...]string{
 	"devops",
 	"dotnet",
 	"elixer",
+	"elm",
 	"general",
 	"golang",
 	"graphql",
@@ -81,8 +108,10 @@ var types = [...]string{
 	"ios",
 	"java",
 	"javascript",
+	"leadership",
 	"networking",
 	"php",
+	"product",
 	"python",
 	"ruby",
 	"rust",
@@ -106,11 +135,11 @@ type Conference struct {
 	City       string  `json:"city"`
 	Country    string  `json:"country"`
 	URL        string  `json:"url"`
-	StartDate  string  `json:"startDate"`
-	EndDate    string  `json:"endDate"`
+	StartDate  Time    `json:"startDate"`
+	EndDate    Time    `json:"endDate"`
 	Twitter    *string `json:"twitter,omitempty"`
 	CfpURL     *string `json:"cfpUrl,omitempty"`
-	CfpEndDate *string `json:"cfpEndDate,omitempty"`
+	CfpEndDate *Time   `json:"cfpEndDate,omitempty"`
 }
 
 // GetConferences gets the conferences for a particular type and year (like DevOps 2019) and will return a list of conferences or an error
